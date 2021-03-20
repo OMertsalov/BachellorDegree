@@ -9,7 +9,7 @@ import nu.pattern.OpenCV;
 public class OpenCvApplication {
 
 	public static void main(String[] args) {
-		OpenCV.loadShared();
+		OpenCV.loadLocally();
 		SpringApplication.run(OpenCvApplication.class, args);
 	}
 

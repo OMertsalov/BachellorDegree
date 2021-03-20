@@ -6,6 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.example.demo.services.PreProcessorService;
 
+import nu.pattern.OpenCV;
+
 @SpringBootTest
 class PreProcessorServiceTests {
 	
@@ -14,8 +16,9 @@ class PreProcessorServiceTests {
 	
 	@Test
 	void preProcessingImages() {
+		OpenCV.loadLocally();
 		String folderPath = "/home/alexander/WorkFolder/Tesseract/Images";
-		preProcessorService.processImages(folderPath);
+		preProcessorService.processImageForLearning(folderPath);
 	}
 
 }

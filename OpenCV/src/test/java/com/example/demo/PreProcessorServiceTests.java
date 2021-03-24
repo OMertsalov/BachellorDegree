@@ -18,7 +18,9 @@ class PreProcessorServiceTests {
 	void preProcessingImages() {
 		OpenCV.loadLocally();
 		String folderPath = "/home/alexander/WorkFolder/Tesseract/Images";
-		preProcessorService.processImageForLearning(folderPath);
+		//preProcessorService.processImageForLearning(folderPath);
+		folderPath += "/PreProcessedd";
+		preProcessorService.processImageForOCR(folderPath);
 	}
 
 }

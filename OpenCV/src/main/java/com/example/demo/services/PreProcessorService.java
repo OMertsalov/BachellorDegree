@@ -6,4 +6,8 @@ public interface PreProcessorService {
 	
 	public void processImageForLearning(String folderPath);
 	
+	public void processImageForOCR(String folderPath);
+	
+	
+	
 }

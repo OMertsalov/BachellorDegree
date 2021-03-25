@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<title>ReceiptsReader</title>
+	</head>
+	<body>
+		<h1>Paste your receipt there</h1>
+		<p th:text="${message}" th:if="${message ne null}"></p>
+		<form method="post" th:action="@{/upload}" enctype="multipart/form-data">
+			<input type="file" name="file">
+			<button type="submit">Read Text</button>
+		</form>
+	</body>
+</html>
+
+
+
+                

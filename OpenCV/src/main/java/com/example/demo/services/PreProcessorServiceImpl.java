@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -243,6 +244,16 @@ public class PreProcessorServiceImpl implements PreProcessorService {
 		ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 	    Mat hierarchy = new Mat();
 	    Imgproc.findContours(preProcessedMatrix, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+	    //sort from top to bottom
+	    contours.sort(new Comparator<MatOfPoint>() {
+	    	@Override
+	        public int compare(MatOfPoint o1, MatOfPoint o2) {
+	            Rect rect1 = Imgproc.boundingRect(o1);
+	            Rect rect2 = Imgproc.boundingRect(o2);
+	            return Double.compare(rect1.tl().y, rect2.tl().y);
+	        }
+		});
+	    
 	    int lineNumber = 0;
 	    for (MatOfPoint point : contours) {
 		    	Rect rect = Imgproc.boundingRect(point);

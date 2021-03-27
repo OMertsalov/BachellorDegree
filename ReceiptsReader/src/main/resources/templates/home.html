@@ -1,18 +1,51 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
-	<head>
-		<title>ReceiptsReader</title>
-	</head>
-	<body>
-		<h1>Paste your receipt there</h1>
-		<p th:text="${message}" th:if="${message ne null}"></p>
-		<form method="post" th:action="@{/upload}" enctype="multipart/form-data">
-			<input type="file" name="file">
-			<button type="submit">Read Text</button>
-		</form>
-	</body>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>ReceiptsReader</title>
+<style th:inline="text">
+	table, td, th {
+		border: 1px solid blue;
+	}
+
+	table {
+		border-collapse: collapse;
+		margin: auto;
+		margin-top: 20px;
+		width: 100%;
+	}
+</style>
+</head>
+<body>
+	<h1>Paste your receipt there</h1>
+	<p th:text="${message}" th:if="${message ne null}"></p>
+	<form method="post" th:action="@{/upload}"
+		enctype="multipart/form-data">
+		<input type="file" name="file">
+		<button type="submit">Read Text</button>
+	</form>
+	<table>
+		<thead>
+			<tr>
+				<th>Default</th>
+				<th>Image</th>
+				<th>Trained</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr th:if="${results.empty}">
+				<td colspan="3">No results.</td>
+			</tr>
+			<tr th:each="result : ${results}">
+				<td><span th:text="${result.testText}"> Default </span></td>
+				<td><img
+					th:src="@{'data:image/png;base64,'+${result.imageBase64}}" alt="" /></td>
+				<td><span th:text="${result.resultText}"> Trained </span></td>
+			</tr>
+		</tbody>
+	</table>
+</body>
 </html>
 
 
 
-                

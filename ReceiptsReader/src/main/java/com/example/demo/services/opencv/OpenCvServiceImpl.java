@@ -1,9 +1,13 @@
 package com.example.demo.services.opencv;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -22,12 +26,11 @@ import org.springframework.stereotype.Service;
 public class OpenCvServiceImpl implements OpenCvService {
 
 	@Override
-	public Mat getReceiptLines(byte[] image) {
+	public List<BufferedImage> getReceiptLines(byte[] image) throws IOException {
 		Mat mat = Imgcodecs.imdecode(new MatOfByte(image), Imgcodecs.IMREAD_UNCHANGED);
 		Mat preProcessedMat = preProcessImageForOcr(mat);
-		List<Mat> receiptLines = findLines(preProcessedMat);
-//		saveMatAsImage(receiptLines.get(14));		
-		return null;
+		return findLines(preProcessedMat);
+//		saveMatAsImage(receiptLines.get(14));
 	}
 	
 	@Deprecated
@@ -36,7 +39,7 @@ public class OpenCvServiceImpl implements OpenCvService {
 		Imgcodecs.imwrite("/home/alexander/WorkFolder/Tesseract/Images/PreProcessedd/Test/image.png", imageAsMat, int1);
 	}
 
-	private List<Mat> findLines(Mat mat) {
+	private List<BufferedImage> findLines(Mat mat) throws IOException {
 
 		Mat preProcessedMat = mat;
 
@@ -48,7 +51,7 @@ public class OpenCvServiceImpl implements OpenCvService {
 
 		drawRectsOfWords(preProcessedMat);
 
-		return cropLines(preProcessedMat, mat);
+		return cropLinesAndSaveAsBI(preProcessedMat, mat);
 
 	}
 
@@ -80,27 +83,18 @@ public class OpenCvServiceImpl implements OpenCvService {
 		return preProcessedMat;
 	}
 
-	private List<Mat> cropLines(Mat preProcessedMatrix, Mat original) {
+	private List<BufferedImage> cropLinesAndSaveAsBI(Mat preProcessedMatrix, Mat original) throws IOException {
 		ArrayList<MatOfPoint> contours = new ArrayList<>();
 		Imgproc.findContours(preProcessedMatrix, contours, new Mat(), Imgproc.RETR_EXTERNAL,
 				Imgproc.CHAIN_APPROX_SIMPLE);
-		
-		// sort from top to bottom
-//		contours.sort(new Comparator<MatOfPoint>() {
-//			@Override
-//			public int compare(MatOfPoint o1, MatOfPoint o2) {
-//				Rect rect1 = Imgproc.boundingRect(o1);
-//				Rect rect2 = Imgproc.boundingRect(o2);
-//				return Double.compare(rect1.tl().y, rect2.tl().y);
-//			}
-//		});
+
 		contours.sort((MatOfPoint o1, MatOfPoint o2) -> {
 			Rect rect1 = Imgproc.boundingRect(o1);
 			Rect rect2 = Imgproc.boundingRect(o2);
 			return Double.compare(rect1.tl().y, rect2.tl().y);
 		});
 		
-		List<Mat> lines = new ArrayList<>();
+		List<BufferedImage> lines = new ArrayList<>();
 		for (MatOfPoint point : contours) {
 			Rect rect = Imgproc.boundingRect(point);
 			Mat line = new Mat(original, rect);
@@ -109,7 +103,7 @@ public class OpenCvServiceImpl implements OpenCvService {
 			Mat lineVsBorder = new Mat();
 			Core.copyMakeBorder(line, lineVsBorder, 10, 10, 5, 5, Core.BORDER_ISOLATED,
 					new Scalar(255, 255, 255));
-			lines.add(lineVsBorder);
+			lines.add(mat2BufferedImage(lineVsBorder));
 		}
 		return lines;
 	}
@@ -175,6 +169,10 @@ public class OpenCvServiceImpl implements OpenCvService {
 				Imgproc.line(matrix, new Point(rect.x, 0), new Point(rect.x, matrix.height()), new Scalar(0, 0, 0), 30);
 			}
 		}
+		
+		//delete left and right border
+		Imgproc.line(matrix, new Point(0, 0), new Point(0, matrix.height()), new Scalar(0, 0, 0), 30);
+		Imgproc.line(matrix, new Point(matrix.width(), 0), new Point(matrix.width(), matrix.height()), new Scalar(0, 0, 0), 30);
 
 		return matrix;
 	}
@@ -189,6 +187,14 @@ public class OpenCvServiceImpl implements OpenCvService {
 			Imgproc.rectangle(preProcessedMatrix, new Point(0, (double) rect.y - 2),
 					new Point(preProcessedMatrix.width(), (double) rect.y + rect.height), new Scalar(255, 255, 255), -1);
 		}
+	}
+	
+	static BufferedImage mat2BufferedImage(Mat matrix) throws IOException{
+	    MatOfByte mob = new MatOfByte();
+	    Imgcodecs.imencode(".png", matrix, mob);
+	    byte[] ba = mob.toArray();
+
+	    return ImageIO.read(new ByteArrayInputStream(ba));
 	}
 
 }

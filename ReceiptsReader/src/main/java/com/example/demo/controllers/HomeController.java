@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -65,14 +64,14 @@ public class HomeController {
 
         try {
         	List<BufferedImage> lines = openCvService.getReceiptLines(image.getBytes());
-        	List <String> textLines = receiptReaderService.readLines(lines,"/default");
-        	List <String> auchanLang = receiptReaderService.readLines(lines,"");
+        	List <String> textLines = receiptReaderService.readLines(lines,"auchan");
+        	receiptReaderService.readReceiptData(lines, "auchan");
         	results = new ArrayList<>();
         	for(int i=0; i < lines.size();i++) {
         		ByteArrayOutputStream baos = new ByteArrayOutputStream();
         		ImageIO.write(lines.get(i), "png", baos);
 	            String imageAsBase64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-	            results.add(new Results(imageAsBase64, textLines.get(i), auchanLang.get(i)));
+	            results.add(new Results(imageAsBase64, null, textLines.get(i)));
         	}
         	attributes.addFlashAttribute("results", results);     	
 		} catch (IOException e) {
@@ -83,7 +82,7 @@ public class HomeController {
 
         // return success response
         attributes.addFlashAttribute("message", "You successfully uploaded receipt.");
-
+        
         return "redirect:/home";
     }
 }

@@ -7,7 +7,6 @@ public class Results {
 	private String resultText;
 
 	public Results(String imageBase64, String testText, String resultText) {
-		super();
 		this.imageBase64 = imageBase64;
 		this.testText = testText;
 		this.resultText = resultText;

@@ -15,16 +15,16 @@ DROP TABLE IF EXISTS t_tax;
 DROP TABLE IF EXISTS t_receipt;
 DROP TABLE IF EXISTS t_receipt_taxes;
 DROP TABLE IF EXISTS t_payment;
-DROP TABLE IF EXISTS t_auchan_item;
-DROP TABLE IF EXISTS t_auchan_temp_item;
-DROP TABLE IF EXISTS t_auchan_receipt_items;
+DROP TABLE IF EXISTS t_item;
+DROP TABLE IF EXISTS t_temp_item;
+DROP TABLE IF EXISTS t_receipt_items;
 
 CREATE TABLE t_market (
 	id SERIAL PRIMARY KEY,	
 	name VARCHAR(128) NOT NULL,
-	street VARCHAR(64) NOT NULL,
-	zip VARCHAR(10) UNIQUE NOT NULL,
-	city VARCHAR(64) NOT NULL
+	address VARCHAR(128) UNIQUE NOT NULL,
+	partnership VARCHAR(128),
+	partnership_address VARCHAR(128)
 );
 
 CREATE TABLE t_tax (
@@ -61,34 +61,31 @@ CREATE TABLE t_payment (
 	FOREIGN KEY(receipt_id) REFERENCES t_receipt(id)
 );
 
-CREATE TABLE t_auchan_item (
+CREATE TABLE t_item (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(128) NOT NULL,
-	price DECIMAL(10,2) NOT NULL,
-	discount DECIMAL(5,4) NOT NULL,
 	tax_id BIGINT UNSIGNED NOT NULL,
 	is_temporary BOOLEAN NOT NULL default false,
 	FOREIGN KEY(tax_id) REFERENCES t_tax(id)
 );
 
-CREATE TABLE t_auchan_temp_item(
-	auchan_item_id BIGINT UNSIGNED PRIMARY KEY,
+CREATE TABLE t_temp_item (
+	item_id BIGINT UNSIGNED PRIMARY KEY,
 	last_access_date TIMESTAMP NOT NULL,
 	access_counter INT NOT NULL default 1,
-	FOREIGN KEY(auchan_item_id) REFERENCES t_auchan_item(id)
+	FOREIGN KEY(item_id) REFERENCES t_item(id)
 );
 
-CREATE TABLE t_auchan_receipt_items (
+CREATE TABLE t_receipt_items (
 	id SERIAL PRIMARY KEY,
 	receipt_id BIGINT UNSIGNED NOT NULL,
 	item_id BIGINT UNSIGNED NOT NULL,
-	amount INT NOT NULL default 0,
+	amount DECIMAL(6,3) NOT NULL default 1.00,
+	item_price DECIMAL(10,2) NOT NULL,
 	price_sum DECIMAL(10,2) NOT NULL,
 	FOREIGN KEY(receipt_id) REFERENCES t_receipt(id),
-	FOREIGN KEY(item_id) REFERENCES t_auchan_item(id)
+	FOREIGN KEY(item_id) REFERENCES t_item(id)
 );
-
-INSERT INTO t_market VALUES (default,'HIPERMARKET AUCHAN','STAWOWA 61','31-346','KRAKÓW');
 
 INSERT INTO t_tax VALUES (default,'A',0.23);
 INSERT INTO t_tax VALUES (default,'B',0.08);

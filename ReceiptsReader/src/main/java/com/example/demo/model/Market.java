@@ -7,6 +7,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name="t_market")
@@ -21,6 +22,9 @@ public class Market {
 	
 	@Column(name="partnership_address")
 	private String partnershipAddress;
+	
+	@Transient
+	private boolean known = true;
 
 	public Market() {
 	}
@@ -72,6 +76,14 @@ public class Market {
 
 	public void setPartnershipAddress(String partnershipAddress) {
 		this.partnershipAddress = partnershipAddress;
+	}
+
+	public boolean isKnown() {
+		return known;
+	}
+
+	public void setKnown(boolean known) {
+		this.known = known;
 	}
 
 	@Override

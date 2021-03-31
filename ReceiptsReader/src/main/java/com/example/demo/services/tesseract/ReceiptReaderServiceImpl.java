@@ -53,7 +53,7 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 	}
 
 	@Override
-	public String readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
+	public Receipt readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
 		tesseract.setLanguage(language);
 		Receipt receipt = new Receipt();
 		Market market = new Market();	
@@ -63,10 +63,10 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		StringBuilder receiptText = new StringBuilder();
 		String lineText = "";
 		Iterator<BufferedImage> linesIterator = lines.iterator();
-		
+		int lineCounter = 0;
 		while (!lineText.toLowerCase().contains("paragon fiskalny")) {
 			if (!linesIterator.hasNext())
-				return "Na zdjęciu nie ma paragonu fiskalnego!";
+				throw new TesseractException("Na zdjęciu nie ma paragonu fiskalnego!");
 			BufferedImage lineImage = linesIterator.next();
 			
 			if (lineImage.getHeight() > avgLineHeight) tesseract.setPageSegMode(4);
@@ -74,26 +74,27 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 			
 			lineText = tesseract.doOCR(lineImage);
 			receiptText.append(lineText).append('\n');
-			addMarketData(market, lineText.toLowerCase());
+			addMarketData(market, lineText.toLowerCase(),lineCounter);
 			Date sellDate = findSellDate(lineText);
-			if(sellDate != null) receipt.setSellDate(sellDate);			
+			if(sellDate != null) receipt.setSellDate(sellDate);					
+		}
+		
+		if(marketRepository.existsByAddress(market.getAddress())) {
+			System.out.println("Exist");
+			//check data
+		} else {
+			market.setKnown(false);
+			receipt.setContainNewData(true);
 		}
 		
 		//start with line text it will contain Paragon Fiskalny and maybe some item data
-		if(marketRepository.existsByAddress(market.getAddress())) {
-			System.out.println("Exist");
-		} else {
-			System.out.println("Not exist, with name "+ market.getName());
-			marketRepository.save(market);
-		}
-		//find Market in dataBase if there is not such market,then ask user to add
-		//if found then add it to receipt
-//		System.out.println(market.toString());
-		return receiptText.toString();
+		
+		receipt.setText(receiptText.toString());
+		return receipt;
 	}
 
 	private Date findSellDate(String input) {
-		Matcher matcher = Pattern.compile("\\d{4}-\\d{2}-\\d{2}").matcher(input);	
+		Matcher matcher = Pattern.compile("\\d{4}-\\d{2}-\\d{2}").matcher(input);
 		if(matcher.find()) {
 			String date = matcher.group();
 			try {
@@ -105,11 +106,10 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		return null;
 	}
 
-	private void addMarketData(Market market, String textData) {
+	private void addMarketData(Market market, String textData, int lineCounter) {
 		String[] textlines = textData.split(System.getProperty("line.separator"));
 		for(String line : textlines) {
-			if(market.getName() == null && line.contains("auchan"))
-				market.setName("Auchan");
+			lineCounter++;
 			if(market.getPartnership() == null && isPartnershipData(line)) 
 				market.setPartnership(line);
 			else if(isStreetData(line)){
@@ -117,12 +117,23 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 					market.setPartnershipAddress(line);
 				else if(market.getAddress() == null)
 					market.setAddress(line);
+			} else {
+				if(market.getName() == null && isMarketNameData(line,lineCounter))
+					market.setName(line);
 			}
 		}
 	}
 
+	private boolean isMarketNameData(String line,int lineCounter) {
+//		jest w pierwszych 3 liniach 
+//		minimum 2 symbole
+//		Zawiera litery 
+//		Albo zawiera slowo sklep lub market
+		return lineCounter <= 3  && ((line.length() >= 2 && line.matches("[a-zA-Z]+")) || (line.contains("sklep") || line.contains("market")) );
+	}
+
 	private boolean isPartnershipData(String data) {
-		return data.contains("sp.z o.o.");
+		return data.contains("sp.z o.o.") || data.contains("s.a.");
 	}
 
 	private boolean isStreetData(String data) {

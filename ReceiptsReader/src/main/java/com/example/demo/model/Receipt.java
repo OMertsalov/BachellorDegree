@@ -1,14 +1,47 @@
 package com.example.demo.model;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name="t_receipt")
 public class Receipt {
 
-	private int id;
+	@Id
+	@GeneratedValue
+	private Long id;
+	
+	@OneToMany
+	@JoinColumn(name="market_id")
 	private Market market;
+	
+	@Column(name="sell_date")
 	private Date sellDate;
+	
+	@Column(name = "tax_sum")
 	private double taxSum;
+	
+	@Column(name="price_sum")
 	private double priceSum;
+	
+	@OneToMany(mappedBy = "receipt")
+	private List<ReceiptItems> items = new ArrayList();
+	
+	@Transient
+	private boolean containNewData;
+	
+	@Transient
+	private String text;
 	
 	public Receipt() {
 	}
@@ -20,12 +53,20 @@ public class Receipt {
 		this.priceSum = priceSum;
 	}
 
-	public int getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Long id) {
 		this.id = id;
+	}
+
+	public List<ReceiptItems> getItems() {
+		return items;
+	}
+
+	public void setItems(List<ReceiptItems> items) {
+		this.items = items;
 	}
 
 	public Market getMarket() {
@@ -60,4 +101,20 @@ public class Receipt {
 		this.priceSum = priceSum;
 	}
 
+	public boolean isContainNewData() {
+		return containNewData;
+	}
+
+	public void setContainNewData(boolean containNewData) {
+		this.containNewData = containNewData;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+	
 }

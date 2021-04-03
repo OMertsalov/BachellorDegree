@@ -49,6 +49,12 @@ public class Tax {
 	public void setRate(double rate) {
 		this.rate = rate;
 	}
+
+	@Override
+	public String toString() {
+		return "Tax [sign=" + sign + ", rate=" + rate + "]";
+	}
+	
 	
 	
 }

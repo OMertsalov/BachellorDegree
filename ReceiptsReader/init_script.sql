@@ -90,5 +90,6 @@ CREATE TABLE t_receipt_items (
 INSERT INTO t_tax VALUES (default,'A',0.23);
 INSERT INTO t_tax VALUES (default,'B',0.08);
 INSERT INTO t_tax VALUES (default,'C',0.05);
+INSERT INTO t_tax VALUES (default,'D',0);
 
 COMMIT;

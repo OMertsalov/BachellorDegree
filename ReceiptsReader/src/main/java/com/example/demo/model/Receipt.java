@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -21,7 +22,7 @@ public class Receipt {
 	@GeneratedValue
 	private Long id;
 	
-	@OneToMany
+	@ManyToOne
 	@JoinColumn(name="market_id")
 	private Market market;
 	
@@ -36,9 +37,6 @@ public class Receipt {
 	
 	@OneToMany(mappedBy = "receipt")
 	private List<ReceiptItems> items = new ArrayList();
-	
-	@Transient
-	private boolean containNewData;
 	
 	@Transient
 	private String text;
@@ -99,14 +97,6 @@ public class Receipt {
 
 	public void setPriceSum(double priceSum) {
 		this.priceSum = priceSum;
-	}
-
-	public boolean isContainNewData() {
-		return containNewData;
-	}
-
-	public void setContainNewData(boolean containNewData) {
-		this.containNewData = containNewData;
 	}
 
 	public String getText() {

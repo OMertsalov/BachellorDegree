@@ -1,21 +1,32 @@
 package com.example.demo.services.tesseract;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.model.Item;
 import com.example.demo.model.Market;
 import com.example.demo.model.Receipt;
+import com.example.demo.model.ReceiptItems;
+import com.example.demo.model.Result;
+import com.example.demo.model.Tax;
 import com.example.demo.repository.MarketRepository;
+import com.example.demo.repository.TaxRepository;
 
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -23,79 +34,143 @@ import net.sourceforge.tess4j.TesseractException;
 @Service
 public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 
-	private Tesseract tesseract;
 	private MarketRepository marketRepository;
-	
+	private TaxRepository taxRepository;
+
 	@Autowired
-	public ReceiptReaderServiceImpl(MarketRepository marketRepository) {
+	public ReceiptReaderServiceImpl(MarketRepository marketRepository,TaxRepository taxRepository) {
 		this.marketRepository = marketRepository;
-		tesseract = new Tesseract();
+		this.taxRepository = taxRepository;
+	}
+
+	@Override
+	public Result readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
+		Result result = new Result(new Receipt() ,new LinkedHashMap<>());
+		Receipt receipt = result.getReceipt();
+		Tesseract tesseract = createTesseractInstanse(language);
+		double avgLineHeight = getAvgLineHeight(lines);
+		StringBuilder receiptText = new StringBuilder();
+		Iterator<BufferedImage> linesIterator = lines.iterator();
+		String lineText = "";
+		int lineCounter = 0;
+		BufferedImage lineImage = null;
+		receipt.setMarket(new Market());
+		while (!lineText.contains("paragon fiskalny")) {
+			if (!linesIterator.hasNext())
+				throw new TesseractException("Na zdjęciu nie ma paragonu fiskalnego!");
+			lineImage = linesIterator.next();
+			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight).toLowerCase();
+			addMarketData(receipt, lineText, lineCounter);
+			lineCounter++;
+			receiptText.append(lineText).append('\n');
+		}
+		
+		while (!lineText.contains("- - - - - - - -") || lineText.contains("opodatk")) {
+			addItemData(lineImage ,lineText, result.getReceiptItems(),receipt);
+			lineImage = linesIterator.next();
+			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight).toLowerCase();
+			receiptText.append(lineText).append('\n');
+		}
+
+		// start with line text it will contain Paragon Fiskalny and maybe some item
+		// data
+
+		if (marketRepository.existsByAddress(receipt.getMarket().getAddress())) {
+			System.out.println("Exist");
+			// check data
+		} else {
+		}
+
+		receipt.setText(receiptText.toString());
+		result.setReceipt(receipt);
+		return result;
+	}
+
+	private void addItemData(BufferedImage image, String textData, Map<String, ReceiptItems> receiptItems,Receipt receipt) {
+		String[] textlines = textData.split(System.getProperty("line.separator"));
+		for (String line : textlines) {
+			if((!line.contains("paragon fiskalny"))) {
+//				Matcher matcher = Pattern.compile("(.*\\S {1,4})(\\d{1,3}(?:[,.]\\d{3})?) x(\\d{1,8}[,.]\\d{2}) (\\d{1,8}[,.]\\d{2})([abcd])").matcher(line);
+				Matcher matcher = Pattern.compile("(.*\\S {1,4})([oli0-9]{1,3}(?:[,.][oli0-9]{3})?) x([oli0-9]{1,8}[,.][oli0-9]{2}) ([oli0-9]{1,8}[,.][oli0-9]{2})([abcd])").matcher(line);
+				ReceiptItems receiptItem = new ReceiptItems(receipt, new Item(line,new Tax(' ',0),true),1,0,0);
+				if(matcher.find()) { 
+					String itemName = matcher.group(1);
+					double itemAmount = stringToDouble(matcher.group(2));
+					double itemPrice = stringToDouble(matcher.group(3));
+					double itemPriceSum = stringToDouble(matcher.group(4));
+					char itemTaxSign = matcher.group(5).charAt(0);
+					Tax itemTax = taxRepository.findBySign(itemTaxSign);
+					receiptItem.setItem(new Item(itemName,itemTax));
+					receiptItem.setAmount(itemAmount);
+					receiptItem.setItemPrice(itemPrice);
+					receiptItem.setPriceSum(itemPriceSum);
+				}			
+				receiptItems.put(imageToBase64(image),receiptItem);
+			}
+		}
+	}
+
+	private double stringToDouble(String string) {
+		return Double.parseDouble(string.replace(",",".").replace("o", "0").replace("l", "1").replace("i", "1"));
+	}
+
+	private String imageToBase64(BufferedImage image) {
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(image, "png", baos);
+	        return Base64.getEncoder().encodeToString(baos.toByteArray());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+
+	private String readTextOnImage(Tesseract tesseract, BufferedImage lineImage, double avgLineHeight)
+			throws TesseractException {
+		if (lineImage.getHeight() > avgLineHeight)
+			tesseract.setPageSegMode(4);
+		else
+			tesseract.setPageSegMode(7);
+		return tesseract.doOCR(lineImage);
+	}
+
+	private double getAvgLineHeight(List<BufferedImage> lines) {
+		return (lines.stream().mapToDouble(bi -> bi.getTileHeight()).average().getAsDouble()) * 1.5;
+	}
+
+	private Tesseract createTesseractInstanse(String language) {
+		Tesseract tesseract = new Tesseract();
 		tesseract.setDatapath("src/main/resources/tessdata");
 		tesseract.setOcrEngineMode(1);
 		tesseract.setTessVariable("user_defined_dpi", "300");
-	}
-
-	@Override
-	public List<String> readLines(List<BufferedImage> lines, String language) throws TesseractException {
-		List<String> textLines = new ArrayList<>();
-		double avgLineHeight = lines.stream().mapToDouble(bi -> bi.getTileHeight()).average().getAsDouble();
-		avgLineHeight += avgLineHeight / 2;
 		tesseract.setLanguage(language);
-		for (BufferedImage image : lines) {
-			if (image.getHeight() > avgLineHeight)
-				tesseract.setPageSegMode(4);
-			else
-				tesseract.setPageSegMode(7);
-			String result = tesseract.doOCR(image);
-			textLines.add(result);
-		}
-		return textLines;
+		return tesseract;
 	}
 
-	@Override
-	public Receipt readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
-		tesseract.setLanguage(language);
-		Receipt receipt = new Receipt();
-		Market market = new Market();	
-		
-		double avgLineHeight = lines.stream().mapToDouble(bi -> bi.getTileHeight()).average().getAsDouble();
-		avgLineHeight += avgLineHeight / 2;
-		StringBuilder receiptText = new StringBuilder();
-		String lineText = "";
-		Iterator<BufferedImage> linesIterator = lines.iterator();
-		int lineCounter = 0;
-		while (!lineText.toLowerCase().contains("paragon fiskalny")) {
-			if (!linesIterator.hasNext())
-				throw new TesseractException("Na zdjęciu nie ma paragonu fiskalnego!");
-			BufferedImage lineImage = linesIterator.next();
-			
-			if (lineImage.getHeight() > avgLineHeight) tesseract.setPageSegMode(4);
-			else tesseract.setPageSegMode(7);
-			
-			lineText = tesseract.doOCR(lineImage);
-			receiptText.append(lineText).append('\n');
-			addMarketData(market, lineText.toLowerCase(),lineCounter);
-			Date sellDate = findSellDate(lineText);
-			if(sellDate != null) receipt.setSellDate(sellDate);					
+	private void addMarketData(Receipt receipt, String textData, Integer lineCounter) {
+		Market market = receipt.getMarket();
+		String[] textlines = textData.split(System.getProperty("line.separator"));
+		for (String line : textlines) {
+			lineCounter++;
+			if (market.getPartnership() == null && isPartnershipData(line))
+				market.setPartnership(line);
+			else if (isStreetData(line)) {
+				if (market.getPartnershipAddress() == null && market.getPartnership() != null)
+					market.setPartnershipAddress(line);
+				else if (market.getAddress() == null)
+					market.setAddress(line);
+			} else if (market.getName() == null && isMarketNameData(line, lineCounter))
+				market.setName(line);
+			else if (receipt.getSellDate() == null) {
+				Date sellDate = getSellDateOrNull(textData);
+				receipt.setSellDate(sellDate);
+			}
 		}
-		
-		if(marketRepository.existsByAddress(market.getAddress())) {
-			System.out.println("Exist");
-			//check data
-		} else {
-			market.setKnown(false);
-			receipt.setContainNewData(true);
-		}
-		
-		//start with line text it will contain Paragon Fiskalny and maybe some item data
-		
-		receipt.setText(receiptText.toString());
-		return receipt;
 	}
 
-	private Date findSellDate(String input) {
+	private Date getSellDateOrNull(String input) {
 		Matcher matcher = Pattern.compile("\\d{4}-\\d{2}-\\d{2}").matcher(input);
-		if(matcher.find()) {
+		if (matcher.find()) {
 			String date = matcher.group();
 			try {
 				return new SimpleDateFormat("yyyy-MM-dd").parse(date);
@@ -106,30 +181,10 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		return null;
 	}
 
-	private void addMarketData(Market market, String textData, int lineCounter) {
-		String[] textlines = textData.split(System.getProperty("line.separator"));
-		for(String line : textlines) {
-			lineCounter++;
-			if(market.getPartnership() == null && isPartnershipData(line)) 
-				market.setPartnership(line);
-			else if(isStreetData(line)){
-				if (market.getPartnershipAddress() == null && market.getPartnership() != null) 
-					market.setPartnershipAddress(line);
-				else if(market.getAddress() == null)
-					market.setAddress(line);
-			} else {
-				if(market.getName() == null && isMarketNameData(line,lineCounter))
-					market.setName(line);
-			}
-		}
-	}
-
-	private boolean isMarketNameData(String line,int lineCounter) {
-//		jest w pierwszych 3 liniach 
-//		minimum 2 symbole
-//		Zawiera litery 
-//		Albo zawiera slowo sklep lub market
-		return lineCounter <= 3  && ((line.length() >= 2 && line.matches("[a-zA-Z]+")) || (line.contains("sklep") || line.contains("market")) );
+	private boolean isMarketNameData(String line, int lineCounter) {
+//		jest w pierwszych 3 liniach, minimum 2 symbole, zawiera litery albo zawiera slowo sklep lub market
+		return lineCounter <= 3 && ((line.length() >= 2 && line.matches("[a-zA-Z]+"))
+				|| (line.contains("sklep") || line.contains("market")));
 	}
 
 	private boolean isPartnershipData(String data) {

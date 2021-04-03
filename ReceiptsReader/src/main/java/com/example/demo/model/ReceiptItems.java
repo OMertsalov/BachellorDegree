@@ -90,6 +90,12 @@ public class ReceiptItems{
 	public void setPriceSum(double priceSum) {
 		this.priceSum = priceSum;
 	}
+
+	@Override
+	public String toString() {
+		return "ReceiptItems [receipt=" + receipt + ", item=" + item + ", amount=" + amount + ", itemPrice=" + itemPrice
+				+ ", priceSum=" + priceSum + "]";
+	}
 	
 	
 }

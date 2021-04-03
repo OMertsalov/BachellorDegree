@@ -5,7 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -18,7 +18,7 @@ public class Item {
 	
 	private String name;
 	
-	@ManyToMany
+	@ManyToOne
 	@JoinColumn(name="tax_id")
 	private Tax tax;
 	
@@ -32,6 +32,11 @@ public class Item {
 		this.name = name;
 		this.tax = tax;
 		this.temporary = temporary;
+	}
+
+	public Item(String name,Tax tax) {
+		this.name = name;
+		this.tax = tax;
 	}
 
 	public Long getId() {
@@ -65,5 +70,12 @@ public class Item {
 	public void setTemporary(boolean temporary) {
 		this.temporary = temporary;
 	}
+
+	@Override
+	public String toString() {
+		return "Item [name=" + name + ", tax=" + tax + ", temporary=" + temporary + "]";
+	}
+	
+	
 	
 }

@@ -4,15 +4,21 @@
 <head>
 <title>ReceiptsReader</title>
 <style th:inline="text">
-	table, td, th {
-		border: 1px solid blue;
+	#uploaded{
+	display: flex;
 	}
-
-	table {
-		border-collapse: collapse;
-		margin: auto;
-		margin-top: 20px;
-		width: 100%;
+	#market_data{
+		display:flex;
+		flex-direction: column;
+		margin: 20px;
+	}
+	#market_data input {
+		margin-bottom: 15px;
+	}
+	#item{
+		border: 1px solid black;
+		margin: 5px;
+		padding: 5px;
 	}
 </style>
 </head>
@@ -24,28 +30,48 @@
 		<input type="file" name="file">
 		<button type="submit">Read Text</button>
 	</form>
-	<table>
-		<thead>
-			<tr>
-				<th>Default</th>
-				<th>Image</th>
-				<th>Trained</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr th:if="${results.empty}">
-				<td colspan="3">No results.</td>
-			</tr>
-			<tr th:each="result : ${results}">
-				<td><span th:text="${result.testText}"> Default </span></td>
-				<td><img
-					th:src="@{'data:image/png;base64,'+${result.imageBase64}}" alt="" /></td>
-				<td><span th:text="${result.resultText}"> Trained </span></td>
-			</tr>
-		</tbody>
-	</table>
+	<div id="uploaded">
+		<img style="position: fixed; bottom:0px; right:0px;" height="100%" th:src="@{'data:image/png;base64,'+${imageAsBase64}}" alt="" />
+		<form th:if="${!result.receiptItems.empty}" th:object="${result}" method="post" th:action="@{/addMarket}">
+			<div id="market_data">
+				<p>Sklep :</p> 
+				<label for="market_name">Nazwa :</label>
+				<input id="market_name" type="text" th:field="*{receipt.market.name}">
+				<label for="market_address">Adres :</label>
+				<input id="market_address" type="text" th:field="*{receipt.market.address}">
+				<label for="market_partnership">Nazwa spółki :</label>
+				<input id="market_partnership" type="text" th:field="*{receipt.market.partnership}">
+				<label for="market_p-address">Adres spółki :</label>
+				<input id="market_p-address" type="text" th:field="*{receipt.market.partnershipAddress}">
+			</div>
+			<div id="item_data">
+				<p>Artykuły : </p>
+				<div id="item" th:each="entry : *{receiptItems}" th:with="receiptItem=${entry.value}">
+					<img width="481" height="28" th:src="@{'data:image/png;base64,'+${entry.key}}" alt="" />
+					<table>
+						<thead>
+							<tr>
+								<th align="left">Nazwa</th>
+								<th align="left">Ilość</th>
+								<th align="left">Cena</th>
+								<th align="left">Podsumowanie</th>
+								<th align="left">Typ podatku</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><input id="item_name" type="text" th:value="${receiptItem.item.name}"></td>
+								<td><input style="width:80px" id="item_amount" type="text" th:value="${receiptItem.amount} % 1 == 0 ? ${#numbers.formatInteger(receiptItem.amount,1)} : ${receiptItem.amount}"></td>
+								<td><input style="width:120px" id="item_price" type="text" th:value="${#numbers.formatDecimal(receiptItem.itemPrice,1,'POINT',2,'COMMA')}"></td>
+								<td><input style="width:120px" id="item_price_sum" type="text" th:value="${#numbers.formatDecimal(receiptItem.priceSum,1,'POINT',2,'COMMA')}"></td>
+								<td><input style="width:80px" id="item_tax_sign" type="text" th:value="${receiptItem.item.tax.sign}"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<button type="submit">Akceptuj</button>
+		</form>
+	</div>
 </body>
 </html>
-
-
-

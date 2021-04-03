@@ -32,7 +32,7 @@
 	</form>
 	<div id="uploaded">
 		<img style="position: fixed; bottom:0px; right:0px;" height="100%" th:src="@{'data:image/png;base64,'+${imageAsBase64}}" alt="" />
-		<form th:if="${!result.receiptItems.empty}" th:object="${result}" method="post" th:action="@{/addMarket}">
+		<form th:if="${!result.receiptItems.empty}" th:object="${result}" method="post" th:action="@{/addReceiptData}">
 			<div id="market_data">
 				<p>Sklep :</p> 
 				<label for="market_name">Nazwa :</label>
@@ -46,7 +46,7 @@
 			</div>
 			<div id="item_data">
 				<p>Artykuły : </p>
-				<div id="item" th:each="entry : *{receiptItems}" th:with="receiptItem=${entry.value}">
+				<div id="item" th:each="entry : *{receiptItems}">
 					<img width="481" height="28" th:src="@{'data:image/png;base64,'+${entry.key}}" alt="" />
 					<table>
 						<thead>
@@ -59,15 +59,16 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td><input id="item_name" type="text" th:value="${receiptItem.item.name}"></td>
-								<td><input style="width:80px" id="item_amount" type="text" th:value="${receiptItem.amount} % 1 == 0 ? ${#numbers.formatInteger(receiptItem.amount,1)} : ${receiptItem.amount}"></td>
-								<td><input style="width:120px" id="item_price" type="text" th:value="${#numbers.formatDecimal(receiptItem.itemPrice,1,'POINT',2,'COMMA')}"></td>
-								<td><input style="width:120px" id="item_price_sum" type="text" th:value="${#numbers.formatDecimal(receiptItem.priceSum,1,'POINT',2,'COMMA')}"></td>
-								<td><input style="width:80px" id="item_tax_sign" type="text" th:value="${receiptItem.item.tax.sign}"></td>
+							<tr> 
+								<td><input id="item_name" type="text" th:field="*{receiptItems[__${entry.key}__].item.name}"></td>
+								<td><input style="width:80px" id="item_amount" type="text" th:field="*{receiptItems[__${entry.key}__].amount}"></td>
+								<td><input style="width:120px" id="item_price" type="text" th:field="*{receiptItems[__${entry.key}__].itemPrice}"></td>
+								<td><input style="width:120px" id="item_price_sum" type="text" th:field="*{receiptItems[__${entry.key}__].priceSum}"></td>
+								<td><input style="width:80px" id="item_tax_sign" type="text" th:field="*{receiptItems[__${entry.key}__].item.tax.sign}"></td>
 							</tr>
 						</tbody>
 					</table>
+					<p th:text="${entry.value.lineTextByOCR}"></p>
 				</div>
 			</div>
 			<button type="submit">Akceptuj</button>

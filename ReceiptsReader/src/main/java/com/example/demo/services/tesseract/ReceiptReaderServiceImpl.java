@@ -36,6 +36,8 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 
 	private MarketRepository marketRepository;
 	private TaxRepository taxRepository;
+	
+	private static final int MIN_ITEM_LINELENGTH = 14;
 
 	@Autowired
 	public ReceiptReaderServiceImpl(MarketRepository marketRepository,TaxRepository taxRepository) {
@@ -55,20 +57,20 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		int lineCounter = 0;
 		BufferedImage lineImage = null;
 		receipt.setMarket(new Market());
-		while (!lineText.contains("paragon fiskalny")) {
+		while (!lineText.toLowerCase().contains("paragon fiskalny")) {
 			if (!linesIterator.hasNext())
 				throw new TesseractException("Na zdjęciu nie ma paragonu fiskalnego!");
 			lineImage = linesIterator.next();
-			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight).toLowerCase();
+			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight);
 			addMarketData(receipt, lineText, lineCounter);
 			lineCounter++;
 			receiptText.append(lineText).append('\n');
 		}
 		
-		while (!lineText.contains("- - - - - - - -") || lineText.contains("opodatk")) {
+		while (!lineText.toLowerCase().contains("- - - - - - - -") || lineText.toLowerCase().contains("opod")) {
 			addItemData(lineImage ,lineText, result.getReceiptItems(),receipt);
 			lineImage = linesIterator.next();
-			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight).toLowerCase();
+			lineText = readTextOnImage(tesseract, lineImage, avgLineHeight);
 			receiptText.append(lineText).append('\n');
 		}
 
@@ -89,11 +91,12 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 	private void addItemData(BufferedImage image, String textData, Map<String, ReceiptItems> receiptItems,Receipt receipt) {
 		String[] textlines = textData.split(System.getProperty("line.separator"));
 		for (String line : textlines) {
-			if((!line.contains("paragon fiskalny"))) {
-//				Matcher matcher = Pattern.compile("(.*\\S {1,4})(\\d{1,3}(?:[,.]\\d{3})?) x(\\d{1,8}[,.]\\d{2}) (\\d{1,8}[,.]\\d{2})([abcd])").matcher(line);
-				Matcher matcher = Pattern.compile("(.*\\S {1,4})([oli0-9]{1,3}(?:[,.][oli0-9]{3})?) x([oli0-9]{1,8}[,.][oli0-9]{2}) ([oli0-9]{1,8}[,.][oli0-9]{2})([abcd])").matcher(line);
-				ReceiptItems receiptItem = new ReceiptItems(receipt, new Item(line,new Tax(' ',0),true),1,0,0);
-				if(matcher.find()) { 
+			String lineToLowerCase = line.toLowerCase();
+			if((!lineToLowerCase.contains("paragon fiskalny") && lineToLowerCase.length() >= MIN_ITEM_LINELENGTH)) {
+				Matcher matcher = Pattern.compile("(.*\\S {1,4})([oliOI0-9]{1,3}(?:[,.][oliOI0-9]{3})?) ?x([oliOI0-9]{1,8}[,.][oliOI0-9]{2}) ([oliOI0-9]{1,8}[,.][oliOI0-9]{2})([ABCD])").matcher(line);
+				ReceiptItems receiptItem = new ReceiptItems(receipt, new Item("",new Tax(' ',0),true),0,0,0);
+				receiptItem.setLineTextByOCR(line);
+				if(matcher.find()) {
 					String itemName = matcher.group(1);
 					double itemAmount = stringToDouble(matcher.group(2));
 					double itemPrice = stringToDouble(matcher.group(3));
@@ -104,14 +107,14 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 					receiptItem.setAmount(itemAmount);
 					receiptItem.setItemPrice(itemPrice);
 					receiptItem.setPriceSum(itemPriceSum);
-				}			
+				}
 				receiptItems.put(imageToBase64(image),receiptItem);
 			}
 		}
 	}
 
 	private double stringToDouble(String string) {
-		return Double.parseDouble(string.replace(",",".").replace("o", "0").replace("l", "1").replace("i", "1"));
+		return Double.parseDouble(string.toLowerCase().replace(",",".").replace("o", "0").replace("l", "1").replace("i", "1"));
 	}
 
 	private String imageToBase64(BufferedImage image) {
@@ -152,14 +155,15 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		String[] textlines = textData.split(System.getProperty("line.separator"));
 		for (String line : textlines) {
 			lineCounter++;
-			if (market.getPartnership() == null && isPartnershipData(line))
+			String lineToLowerCase = line.toLowerCase();
+			if (market.getPartnership() == null && isPartnershipData(lineToLowerCase))
 				market.setPartnership(line);
-			else if (isStreetData(line)) {
+			else if (isStreetData(lineToLowerCase)) {
 				if (market.getPartnershipAddress() == null && market.getPartnership() != null)
 					market.setPartnershipAddress(line);
 				else if (market.getAddress() == null)
 					market.setAddress(line);
-			} else if (market.getName() == null && isMarketNameData(line, lineCounter))
+			} else if (market.getName() == null && isMarketNameData(lineToLowerCase, lineCounter))
 				market.setName(line);
 			else if (receipt.getSellDate() == null) {
 				Date sellDate = getSellDateOrNull(textData);

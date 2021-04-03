@@ -4,7 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
-
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -52,14 +52,17 @@ public class HomeController {
 		return "home";
 	}
 	
-	@PostMapping("/addMarket")
-    public String addNewMarket(SessionStatus status,RedirectAttributes attributes,@ModelAttribute("result")Result result) {
-		attributes.addFlashAttribute("message", "Sklep został dodany.");
+	@PostMapping("/addReceiptData")
+    public String addReceiptData(SessionStatus status,RedirectAttributes attributes,@ModelAttribute("result")Result result) {
+		 Set<String> keys = result.getReceiptItems().keySet();
+	        // printing the elements of LinkedHashMap
+	     for (String key : keys) {
+	    	 System.out.println("______________________________________________________");
+	    	 System.out.println("OCR -> "+result.getReceiptItems().get(key).getLineTextByOCR());
+	    	 System.out.println("USER -> "+result.getReceiptItems().get(key).itemLineDataToString());
+	     }
 		
-		if(!marketRepository.existsByAddress(result.getReceipt().getMarket().getAddress())) {
-//			marketRepository.save(result.getReceipt().getMarket());
-			//Make train
-		}
+		attributes.addFlashAttribute("message", "Dane zostały dodane.");
 		status.setComplete();
         return "redirect:/home";
 	}
@@ -83,10 +86,7 @@ public class HomeController {
 		} catch (TesseractException e) {
 			e.printStackTrace();
 		}
-
-        // return success response
-        attributes.addFlashAttribute("message", "You successfully uploaded receipt.");
-        
+        attributes.addFlashAttribute("message", "You successfully uploaded receipt.");     
         return "redirect:/home";
     }
 }

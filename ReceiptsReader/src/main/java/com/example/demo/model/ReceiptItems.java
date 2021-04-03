@@ -7,6 +7,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.springframework.format.annotation.NumberFormat;
 
 @Entity
 @Table(name="t_receipt_items")
@@ -24,14 +27,20 @@ public class ReceiptItems{
 	@JoinColumn(name="item_id")
 	private Item item;
 
-	private double amount = 1.00;
+	@NumberFormat
+	private double amount;
 	
 	@Column(name="item_price")
+	@NumberFormat(pattern = "0.00")
 	private double itemPrice;
 	
 	@Column(name="price_sum")
+	@NumberFormat(pattern = "0.00")
 	private double priceSum;
-
+	
+	@Transient
+	private String lineTextByOCR; 
+	
 	public ReceiptItems() {}
 	
 	public ReceiptItems(Receipt receipt, Item item, double amount, double itemPrice, double priceSum) {
@@ -91,11 +100,22 @@ public class ReceiptItems{
 		this.priceSum = priceSum;
 	}
 
+	public String getLineTextByOCR() {
+		return lineTextByOCR;
+	}
+
+	public void setLineTextByOCR(String lineTextByOCR) {
+		this.lineTextByOCR = lineTextByOCR;
+	}
+	
+	public String itemLineDataToString() {
+		return item.getName() + " " + amount + " x"+itemPrice+" "+priceSum+item.getTax().getSign();
+	}
+	
 	@Override
 	public String toString() {
 		return "ReceiptItems [receipt=" + receipt + ", item=" + item + ", amount=" + amount + ", itemPrice=" + itemPrice
 				+ ", priceSum=" + priceSum + "]";
 	}
-	
-	
+
 }

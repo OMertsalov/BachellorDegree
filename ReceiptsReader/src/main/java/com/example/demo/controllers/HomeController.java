@@ -60,6 +60,7 @@ public class HomeController {
 	    	 System.out.println("______________________________________________________");
 	    	 System.out.println("OCR -> "+result.getReceiptItems().get(key).getLineTextByOCR());
 	    	 System.out.println("USER -> "+result.getReceiptItems().get(key).itemLineDataToString());
+	    	 System.out.println("Differences : "+ test(result.getReceiptItems().get(key).getLineTextByOCR(), result.getReceiptItems().get(key).itemLineDataToString() ));
 	     }
 		
 		attributes.addFlashAttribute("message", "Dane zostały dodane.");
@@ -67,6 +68,34 @@ public class HomeController {
         return "redirect:/home";
 	}
 	
+	private int test(String seq1,String seq2) {
+		StringBuilder longestSeq = new StringBuilder(seq1);
+		String shortestSeq = seq2;
+		if(seq1.length() < seq2.length()) {
+			longestSeq = new StringBuilder(seq2);
+			shortestSeq = seq1;
+		}
+		int lengthDiff = longestSeq.length() - shortestSeq.length(); 
+		int s = longestSeq.length();int f= shortestSeq.length();
+		int counter = lengthDiff;
+		for(int i=0; i< shortestSeq.length(); i++) {
+			int iter = i - lengthDiff; if(iter < 0) iter=0;
+			boolean equal = false;
+			for(int j = iter ;j <= i+lengthDiff;j++) {
+				char a = shortestSeq.charAt(i);
+				char b = longestSeq.charAt(j);
+				if(a==b) {
+					equal=true;
+					longestSeq.setCharAt(j, '@');
+					break;
+				}
+				
+			}
+			if(!equal) counter++; 
+		}
+		return counter;
+	}
+
 	@PostMapping("/upload")
     public String readText(@RequestParam("file") MultipartFile image, RedirectAttributes attributes) {
         // check if file is empty

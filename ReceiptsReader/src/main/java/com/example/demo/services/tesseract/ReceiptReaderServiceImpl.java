@@ -97,7 +97,7 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 				ReceiptItems receiptItem = new ReceiptItems(receipt, new Item("",new Tax(' ',0),true),0,0,0);
 				receiptItem.setLineTextByOCR(line);
 				if(matcher.find()) {
-					String itemName = matcher.group(1);
+					String itemName = matcher.group(1).trim();
 					double itemAmount = stringToDouble(matcher.group(2));
 					double itemPrice = stringToDouble(matcher.group(3));
 					double itemPriceSum = stringToDouble(matcher.group(4));

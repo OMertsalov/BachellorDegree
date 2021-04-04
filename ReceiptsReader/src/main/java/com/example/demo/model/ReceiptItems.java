@@ -1,5 +1,7 @@
 package com.example.demo.model;
 
+import java.text.DecimalFormat;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -109,7 +111,8 @@ public class ReceiptItems{
 	}
 	
 	public String itemLineDataToString() {
-		return item.getName() + " " + amount + " x"+itemPrice+" "+priceSum+item.getTax().getSign();
+		if(item.getName().isEmpty()) return "";
+		return item.getName() + " " + new DecimalFormat().format(amount) + " x"+new DecimalFormat("0.00").format(itemPrice)+" "+new DecimalFormat("0.00").format(priceSum)+item.getTax().getSign();
 	}
 	
 	@Override

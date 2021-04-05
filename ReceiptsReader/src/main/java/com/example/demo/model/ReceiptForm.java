@@ -3,16 +3,16 @@ package com.example.demo.model;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class Result {
+public class ReceiptForm {
 
 	private Receipt receipt;
-	private Map<String, ReceiptItems> receiptItems = new LinkedHashMap<>();
+	private Map<String, ReceiptItem> receiptItems = new LinkedHashMap<>();
 	
-	public Result() {
+	public ReceiptForm() {
 	}
 	
 
-	public Result(Receipt receipt, Map<String, ReceiptItems> receiptItems) {
+	public ReceiptForm(Receipt receipt, Map<String, ReceiptItem> receiptItems) {
 		super();
 		this.receipt = receipt;
 		this.receiptItems = receiptItems;
@@ -28,11 +28,11 @@ public class Result {
 		this.receipt = receipt;
 	}
 
-	public Map<String, ReceiptItems> getReceiptItems() {
+	public Map<String, ReceiptItem> getReceiptItems() {
 		return receiptItems;
 	}
 
-	public void setReceiptItems(Map<String, ReceiptItems> receiptItems) {
+	public void setReceiptItems(Map<String, ReceiptItem> receiptItems) {
 		this.receiptItems = receiptItems;
 	}
 	

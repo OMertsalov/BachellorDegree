@@ -32,7 +32,7 @@
 	</form>
 	<div id="uploaded">
 		<img style="position: fixed; bottom:0px; right:0px;" height="100%" th:src="@{'data:image/png;base64,'+${imageAsBase64}}" alt="" />
-		<form th:if="${!result.receiptItems.empty}" th:object="${result}" method="post" th:action="@{/addReceiptData}">
+		<form th:if="${!receiptForm.receiptItems.empty}" th:object="${receiptForm}" method="post" th:action="@{/addReceiptData}">
 			<div id="market_data">
 				<p>Sklep :</p> 
 				<label for="market_name">Nazwa :</label>
@@ -41,12 +41,13 @@
 				<input id="market_address" type="text" th:field="*{receipt.market.address}">
 				<label for="market_partnership">Nazwa spółki :</label>
 				<input id="market_partnership" type="text" th:field="*{receipt.market.partnership}">
+				<span th:if="${#fields.hasErrors('receipt.market.partnership')}" th:errors="*{receipt.market.partnership}">Lox</span>
 				<label for="market_p-address">Adres spółki :</label>
 				<input id="market_p-address" type="text" th:field="*{receipt.market.partnershipAddress}">
 			</div>
 			<div id="item_data">
 				<p>Artykuły : </p>
-				<div id="item" th:each="entry : *{receiptItems}">
+				<div id="item" th:each="entry : *{receiptItems}" th:style="${#fields.hasErrors('receiptItems[__${entry.key}__]')} ? 'border-color:red' : 'border-color:black'">
 					<img width="481" height="28" th:src="@{'data:image/png;base64,'+${entry.key}}" alt="" />
 					<table>
 						<thead>
@@ -60,7 +61,7 @@
 						</thead>
 						<tbody>
 							<tr> 
-								<td><input id="item_name" type="text" th:field="*{receiptItems[__${entry.key}__].item.name}"></td>
+								<td><input id="item_name" type="text" th:field="*{receiptItems[__${entry.key}__].item.name}">
 								<td><input style="width:80px" id="item_amount" type="text" th:field="*{receiptItems[__${entry.key}__].amount}"></td>
 								<td><input style="width:120px" id="item_price" type="text" th:field="*{receiptItems[__${entry.key}__].itemPrice}"></td>
 								<td><input style="width:120px" id="item_price_sum" type="text" th:field="*{receiptItems[__${entry.key}__].priceSum}"></td>

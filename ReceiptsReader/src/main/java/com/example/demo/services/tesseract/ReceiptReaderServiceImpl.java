@@ -22,8 +22,8 @@ import org.springframework.stereotype.Service;
 import com.example.demo.model.Item;
 import com.example.demo.model.Market;
 import com.example.demo.model.Receipt;
-import com.example.demo.model.ReceiptItems;
-import com.example.demo.model.Result;
+import com.example.demo.model.ReceiptItem;
+import com.example.demo.model.ReceiptForm;
 import com.example.demo.model.Tax;
 import com.example.demo.repository.MarketRepository;
 import com.example.demo.repository.TaxRepository;
@@ -46,8 +46,8 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 	}
 
 	@Override
-	public Result readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
-		Result result = new Result(new Receipt() ,new LinkedHashMap<>());
+	public ReceiptForm readReceiptData(List<BufferedImage> lines, String language) throws TesseractException {
+		ReceiptForm result = new ReceiptForm(new Receipt() ,new LinkedHashMap<>());
 		Receipt receipt = result.getReceipt();
 		Tesseract tesseract = createTesseractInstanse(language);
 		double avgLineHeight = getAvgLineHeight(lines);
@@ -88,13 +88,13 @@ public class ReceiptReaderServiceImpl implements ReceiptReaderService {
 		return result;
 	}
 
-	private void addItemData(BufferedImage image, String textData, Map<String, ReceiptItems> receiptItems,Receipt receipt) {
+	private void addItemData(BufferedImage image, String textData, Map<String, ReceiptItem> receiptItems,Receipt receipt) {
 		String[] textlines = textData.split(System.getProperty("line.separator"));
 		for (String line : textlines) {
 			String lineToLowerCase = line.toLowerCase();
 			if((!lineToLowerCase.contains("paragon fiskalny") && lineToLowerCase.length() >= MIN_ITEM_LINELENGTH)) {
 				Matcher matcher = Pattern.compile("(.*\\S {1,4})([oliOI0-9]{1,3}(?:[,.][oliOI0-9]{3})?) ?x([oliOI0-9]{1,8}[,.][oliOI0-9]{2}) ([oliOI0-9]{1,8}[,.][oliOI0-9]{2})([ABCD])").matcher(line);
-				ReceiptItems receiptItem = new ReceiptItems(receipt, new Item("",new Tax(' ',0),true),0,0,0);
+				ReceiptItem receiptItem = new ReceiptItem(receipt, new Item("",new Tax(' ',0),true),0,0,0);
 				receiptItem.setLineTextByOCR(line);
 				if(matcher.find()) {
 					String itemName = matcher.group(1).trim();

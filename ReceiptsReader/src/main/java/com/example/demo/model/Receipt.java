@@ -36,7 +36,7 @@ public class Receipt {
 	private double priceSum;
 	
 	@OneToMany(mappedBy = "receipt")
-	private List<ReceiptItems> items = new ArrayList();
+	private List<ReceiptItem> items = new ArrayList();
 	
 	@Transient
 	private String text;
@@ -59,11 +59,11 @@ public class Receipt {
 		this.id = id;
 	}
 
-	public List<ReceiptItems> getItems() {
+	public List<ReceiptItem> getItems() {
 		return items;
 	}
 
-	public void setItems(List<ReceiptItems> items) {
+	public void setItems(List<ReceiptItem> items) {
 		this.items = items;
 	}
 

@@ -15,7 +15,7 @@ import org.springframework.format.annotation.NumberFormat;
 
 @Entity
 @Table(name="t_receipt_items")
-public class ReceiptItems{
+public class ReceiptItem{
 	
 	@Id
 	@GeneratedValue
@@ -43,9 +43,9 @@ public class ReceiptItems{
 	@Transient
 	private String lineTextByOCR; 
 	
-	public ReceiptItems() {}
+	public ReceiptItem() {}
 	
-	public ReceiptItems(Receipt receipt, Item item, double amount, double itemPrice, double priceSum) {
+	public ReceiptItem(Receipt receipt, Item item, double amount, double itemPrice, double priceSum) {
 		super();
 		this.receipt = receipt;
 		this.item = item;
@@ -110,7 +110,7 @@ public class ReceiptItems{
 		this.lineTextByOCR = lineTextByOCR;
 	}
 	
-	public String itemLineDataToString() {
+	public String toLineText() {
 		if(item.getName().isEmpty()) return "";
 		return item.getName() + " " + new DecimalFormat().format(amount) + " x"+new DecimalFormat("0.00").format(itemPrice)+" "+new DecimalFormat("0.00").format(priceSum)+item.getTax().getSign();
 	}
